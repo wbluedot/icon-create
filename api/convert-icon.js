@@ -25,15 +25,20 @@ function buildPrompt({ angle = "front", background = "transparent" }) {
 ${basePrompt}
 
 ## Input Instruction
-Use the uploaded image as the main reference.
+Use the uploaded image as the main shape reference.
+
+## Transform Instruction
+Rebuild the uploaded reference as a standalone 3D object icon.
+Do not place it on a square app icon tile, plate, badge, or base.
+Do not turn it into a symbol printed on a surface.
+The object itself must become the icon.
 
 ## Adjustments
 Angle: ${angleMap[angle] || "front view"}
 Background: ${bgText}
 
-## Goal
-Transform the image into this exact style.
-Keep the original shape but simplify details.
+## Output Goal
+Create a clean, soft, rounded 3D object in the same silhouette family as the uploaded image.
 `;
 }
 
