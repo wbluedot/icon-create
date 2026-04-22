@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D 아이콘 변환기</title>
+  <style>
+    :root {
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --text: #111827;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --line-strong: #d1d5db;
+      --primary: #111827;
+      --shadow: 0 12px 32px rgba(17, 24, 39, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #ffffff 0%, #f7f9fc 24%, #f2f5f9 54%, #eef2f7 100%);
+    }
+
+    button, input { font: inherit; }
+
+    .app-shell {
+      min-height: 100%;
+      padding: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1280px;
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      grid-template-areas:
+        "sidebar workspace"
+        "history history";
+      gap: 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(229, 231, 235, 0.9);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .workspace {
+      grid-area: workspace;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .history-wrap {
+      grid-area: history;
+      padding: 20px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #4b5563;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 14px 0 0;
+      font-size: 30px;
+      line-height: 1.16;
+      letter-spacing: -0.04em;
+    }
+
+    .sub {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .section-head, .workspace-top, .history-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .section-title, .history-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .section-hint, .history-note {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .workspace-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #4b5563;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .segmented {
+      display: grid;
+      gap: 12px;
+      padding: 8px;
+      border-radius: 18px;
+      background: #f3f4f6;
+      border: 1px solid #eef0f3;
+    }
+
+    .segmented.two { grid-template-columns: repeat(2, 1fr); }
+    .segmented.three { grid-template-columns: repeat(3, 1fr); }
+    .segmented input { display: none; }
+
+    .segmented label {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 14px;
+      border-radius: 14px;
+      font-weight: 800;
+      color: #6b7280;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: 0.18s ease;
+      user-select: none;
+    }
+
+    .segmented input:checked + label {
+      background: #ffffff;
+      color: #111827;
+      border-color: #e5e7eb;
+      box-shadow: 0 2px 8px rgba(17, 24, 39, 0.06);
+    }
+
+    .status-card {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .status-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #374151;
+    }
+
+    .status-body {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 500px;
+      border-radius: 28px;
+      border: 1px solid #eceff3;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 24%, rgba(255,255,255,0.96) 0%, rgba(245,247,251,0.88) 26%, rgba(230,235,242,0.58) 46%, rgba(176,186,200,0.10) 70%, rgba(255,255,255,0) 86%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    }
+
+    .stage.white-bg {
+      background:
+        radial-gradient(circle at 50% 24%, rgba(255,255,255,1) 0%, rgba(255,255,255,0.98) 28%, rgba(247,248,250,0.92) 50%, rgba(255,255,255,0.38) 75%, rgba(255,255,255,0) 90%),
+        #ffffff;
+    }
+
+    .checker {
+      position: absolute;
+      inset: 0;
+      opacity: 0.44;
+      background-image:
+        linear-gradient(45deg, #edf1f5 25%, transparent 25%),
+        linear-gradient(-45deg, #edf1f5 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #edf1f5 75%),
+        linear-gradient(-45deg, transparent 75%, #edf1f5 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+    }
+
+    .stage.white-bg .checker { display: none; }
+
+    .stage-view {
+      position: absolute;
+      inset: 0;
+      padding: 24px;
+      transition: opacity 0.22s ease, visibility 0.22s ease;
+    }
+
+    .stage-view.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .upload-view {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .upload-zone {
+      position: relative;
+      flex: 1;
+      min-height: 320px;
+      border-radius: 24px;
+      border: 1.5px dashed var(--line-strong);
+      background: rgba(248, 250, 252, 0.86);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: 0.18s ease;
+    }
+
+    .upload-zone.dragover {
+      border-color: #9bb5ff;
+      background: rgba(241, 245, 255, 0.86);
+      box-shadow: inset 0 0 0 1px rgba(155, 181, 255, 0.16);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .upload-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .upload-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      box-shadow: 0 8px 18px rgba(17, 24, 39, 0.06);
+    }
+
+    .upload-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .upload-desc {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .file-card {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .file-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      object-fit: cover;
+      background: #fff;
+      border: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .file-meta { min-width: 0; flex: 1; }
+
+    .file-name {
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-info {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .button {
+      min-width: 0;
+      height: 54px;
+      border: 0;
+      border-radius: 18px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .button:active { transform: translateY(1px); }
+    .button.primary { background: var(--primary); color: #fff; }
+    .button.secondary { background: #f3f4f6; color: #111827; }
+    .button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .result-view {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      height: 100%;
+    }
+
+    .preview-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      perspective: 1200px;
+    }
+
+    .icon-card {
+      width: min(360px, 64%);
+      aspect-ratio: 1 / 1;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.35s ease;
+    }
+
+    .icon-card.front { transform: rotateY(0deg); }
+    .icon-card.left { transform: rotateY(45deg); }
+    .icon-card.right { transform: rotateY(-45deg); }
+
+    .icon-shadow {
+      position: absolute;
+      left: 14%;
+      right: 14%;
+      bottom: 9%;
+      height: 12%;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(15, 23, 42, 0.17) 0%, rgba(15, 23, 42, 0.08) 35%, rgba(15, 23, 42, 0) 72%);
+      filter: blur(12px);
+    }
+
+    .icon-shell {
+      position: absolute;
+      inset: 0;
+      border-radius: 54px;
+      background: linear-gradient(180deg, #214d89 0%, #173a6b 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -8px 14px rgba(0,0,0,0.12), 0 18px 40px rgba(15, 23, 42, 0.14);
+    }
+
+    .icon-shell::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 44px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0));
+    }
+
+    .icon-shell::after {
+      content: "";
+      position: absolute;
+      left: 9%;
+      right: 9%;
+      bottom: 20px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.94);
+      opacity: 0.92;
+    }
+
+    .icon-face {
+      position: absolute;
+      inset: 0;
+      padding: 15%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    canvas { display: block; width: 100%; height: 100%; }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(12px);
+      z-index: 8;
+    }
+
+    .loading-box {
+      width: min(340px, calc(100% - 48px));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 24px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(229,231,235,0.95);
+      box-shadow: 0 12px 28px rgba(17, 24, 39, 0.08);
+    }
+
+    .skeleton-card {
+      width: 220px;
+      aspect-ratio: 1 / 1;
+      border-radius: 28px;
+      background: linear-gradient(90deg, #edf1f5 20%, #f8fafc 50%, #edf1f5 80%);
+      background-size: 200% 100%;
+      animation: shimmer 1.25s linear infinite;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .skeleton-card::after {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      bottom: 18px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .loading-title { font-size: 16px; font-weight: 800; }
+    .loading-desc { text-align: center; font-size: 13px; line-height: 1.6; color: var(--muted); }
+
+    @keyframes shimmer {
+      from { background-position: 200% 0; }
+      to { background-position: -200% 0; }
+    }
+
+    .history-list {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .history-list::-webkit-scrollbar { height: 8px; }
+    .history-list::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+
+    .history-item {
+      width: 84px;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      border: 0;
+      background: transparent;
+      padding: 0;
+    }
+
+    .history-thumb {
+      width: 84px;
+      height: 84px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #fff;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(17, 24, 39, 0.05);
+    }
+
+    .history-angle {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .footer-note {
+      font-size: 12px;
+      color: #9ca3af;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "sidebar"
+          "workspace"
+          "history";
+      }
+      .stage { min-height: 480px; }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell { padding: 16px; }
+      .sidebar, .workspace, .history-wrap { padding: 18px; }
+      .actions { grid-template-columns: 1fr; }
+      .stage { min-height: 420px; }
+      .upload-zone { min-height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app">
+      <aside class="panel sidebar">
+        <div>
+          <div class="eyebrow">3D Icon Converter</div>
+          <h1>아이콘 변환기</h1>
+          <p class="sub">업로드한 이미지를 3D 아이콘 스타일로 변환하는 최종 프론트엔드 파일입니다. 기본값은 API 호출이며, 응답이 없으면 데모 렌더링으로 대체됩니다.</p>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">배경</div>
+            <div class="section-hint">출력 배경</div>
+          </div>
+          <div class="segmented two">
+            <input type="radio" name="background" id="bg-transparent" value="transparent" checked />
+            <label for="bg-transparent">투명</label>
+            <input type="radio" name="background" id="bg-white" value="white" />
+            <label for="bg-white">흰색</label>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">각도</div>
+            <div class="section-hint">프롬프트 값</div>
+          </div>
+          <div class="segmented three">
+            <input type="radio" name="angle" id="angle-front" value="front" checked />
+            <label for="angle-front">정면</label>
+            <input type="radio" name="angle" id="angle-left" value="left45" />
+            <label for="angle-left">왼쪽 45도</label>
+            <input type="radio" name="angle" id="angle-right" value="right45" />
+            <label for="angle-right">오른쪽 45도</label>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">API 설정</div>
+            <div class="section-hint">선택 사항</div>
+          </div>
+          <div class="status-card">
+            <div class="status-title">기본 엔드포인트</div>
+            <div class="status-body"><code>/api/convert-icon</code> 으로 요청합니다. 실제 서버를 연결하면 API 결과를 보여주고, 연결이 없으면 데모 결과로 동작합니다.</div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="panel workspace">
+        <div class="workspace-top">
+          <div class="workspace-title" id="workspaceTitle">사진 업로드</div>
+          <div class="chip" id="statusChip">배경: 투명 · 각도: 정면</div>
+        </div>
+
+        <div class="stage" id="stage">
+          <div class="checker"></div>
+
+          <section class="stage-view upload-view" id="uploadView">
+            <div class="upload-zone" id="uploadZone">
+              <input type="file" id="fileInput" accept="image/*" />
+              <div class="upload-content">
+                <div class="upload-icon">↑</div>
+                <div class="upload-title">이미지 업로드</div>
+                <div class="upload-desc">변환할 이미지를 드래그하거나 업로드 해주세요</div>
+              </div>
+            </div>
+
+            <div class="file-card" id="fileCard">
+              <img class="file-thumb" id="fileThumb" alt="업로드 썸네일" />
+              <div class="file-meta">
+                <div class="file-name" id="fileName">filename.png</div>
+                <div class="file-info" id="fileInfo">0 KB</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="stage-view result-view hidden" id="resultView">
+            <div class="preview-wrap">
+              <div class="icon-card front" id="iconCard">
+                <div class="icon-shadow"></div>
+                <div class="icon-shell"></div>
+                <div class="icon-face">
+                  <canvas id="previewCanvas" width="1024" height="1024"></canvas>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-box">
+              <div class="skeleton-card"></div>
+              <div class="loading-title">Generating...</div>
+              <div class="loading-desc">아이콘 스타일을 적용하고 있어요.<br />잠시만 기다려주세요.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions" id="actionsRow">
+          <button class="button primary" id="primaryButton" disabled>아이콘 변환</button>
+          <button class="button secondary" id="downloadButton" disabled>PNG 다운로드</button>
+        </div>
+
+        <div class="footer-note">
+          API 응답 형식 예시: <code>{"imageBase64":"..."}</code> 또는 <code>{"imageUrl":"https://..."}</code>. 이 파일 하나만으로 프론트는 동작하고, 서버는 <code>/api/convert-icon</code> 만 맞춰주면 됩니다.
+        </div>
+      </main>
+
+      <section class="panel history-wrap">
+        <div class="history-head">
+          <div class="history-title">최근 만든 아이콘</div>
+          <div class="history-note">최대 10개</div>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const API_ENDPOINT = '/api/convert-icon';
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadZone = document.getElementById('uploadZone');
+    const fileCard = document.getElementById('fileCard');
+    const fileThumb = document.getElementById('fileThumb');
+    const fileName = document.getElementById('fileName');
+    const fileInfo = document.getElementById('fileInfo');
+    const stage = document.getElementById('stage');
+    const uploadView = document.getElementById('uploadView');
+    const resultView = document.getElementById('resultView');
+    const workspaceTitle = document.getElementById('workspaceTitle');
+    const statusChip = document.getElementById('statusChip');
+    const primaryButton = document.getElementById('primaryButton');
+    const downloadButton = document.getElementById('downloadButton');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const historyList = document.getElementById('historyList');
+    const iconCard = document.getElementById('iconCard');
+    const canvas = document.getElementById('previewCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let selectedFile = null;
+    let selectedObjectUrl = null;
+    let selectedImageBitmap = null;
+    let currentExportDataUrl = '';
+    let historyItems = [];
+    let converted = false;
+
+    function formatBytes(bytes) {
+      if (!bytes) return '0 KB';
+      const kb = bytes / 1024;
+      if (kb < 1024) return kb.toFixed(1) + ' KB';
+      return (kb / 1024).toFixed(2) + ' MB';
+    }
+
+    function getBackgroundValue() {
+      return document.querySelector('input[name="background"]:checked').value;
+    }
+
+    function getAngleValue() {
+      return document.querySelector('input[name="angle"]:checked').value;
+    }
+
+    function getAngleLabel(value) {
+      const map = { front: '정면', left45: '왼쪽 45도', right45: '오른쪽 45도' };
+      return map[value] || '정면';
+    }
+
+    function updateStatus() {
+      const bg = getBackgroundValue() === 'white' ? '흰색' : '투명';
+      const angle = getAngleLabel(getAngleValue());
+      statusChip.textContent = '배경: ' + bg + ' · 각도: ' + angle;
+      stage.classList.toggle('white-bg', getBackgroundValue() === 'white');
+      iconCard.classList.remove('front', 'left', 'right');
+      if (getAngleValue() === 'left45') iconCard.classList.add('left');
+      else if (getAngleValue() === 'right45') iconCard.classList.add('right');
+      else iconCard.classList.add('front');
+    }
+
+    function setLoading(isLoading) {
+      loadingOverlay.style.display = isLoading ? 'flex' : 'none';
+      primaryButton.disabled = isLoading;
+      downloadButton.disabled = isLoading || !currentExportDataUrl;
+      fileInput.disabled = isLoading;
+    }
+
+    function showUploadView() {
+      converted = false;
+      workspaceTitle.textContent = '사진 업로드';
+      uploadView.classList.remove('hidden');
+      resultView.classList.add('hidden');
+      primaryButton.textContent = '아이콘 변환';
+      primaryButton.disabled = !selectedFile;
+      downloadButton.disabled = !currentExportDataUrl;
+    }
+
+    function showResultView() {
+      converted = true;
+      workspaceTitle.textContent = '변환 결과';
+      uploadView.classList.add('hidden');
+      resultView.classList.remove('hidden');
+      primaryButton.textContent = '다시 만들기';
+      primaryButton.disabled = false;
+      downloadButton.disabled = !currentExportDataUrl;
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawFallbackPreview(imageSource) {
+      clearCanvas();
+      const off = document.createElement('canvas');
+      off.width = canvas.width;
+      off.height = canvas.height;
+      const ox = off.getContext('2d');
+
+      const maxW = canvas.width * 0.5;
+      const maxH = canvas.height * 0.5;
+      const ratio = Math.min(maxW / imageSource.width, maxH / imageSource.height);
+      const w = imageSource.width * ratio;
+      const h = imageSource.height * ratio;
+      const x = (canvas.width - w) / 2;
+      const y = (canvas.height - h) / 2 - 16;
+
+      ox.drawImage(imageSource, x, y, w, h);
+      const imageData = ox.getImageData(0, 0, off.width, off.height);
+      const data = imageData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3];
+        if (a < 8) continue;
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+        data[i + 3] = brightness > 240 ? 145 : Math.max(a, 195);
+      }
+
+      ox.putImageData(imageData, 0, 0);
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.filter = 'blur(12px)';
+      ctx.drawImage(off, 12, 18);
+      ctx.globalAlpha = 0.12;
+      ctx.filter = 'blur(8px)';
+      ctx.drawImage(off, -8, -10);
+      ctx.globalAlpha = 1;
+      ctx.filter = 'none';
+      ctx.drawImage(off, 0, 0);
+      ctx.restore();
+    }
+
+    function applyImageToCanvas(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          clearCanvas();
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve();
+        };
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    async function fileToDataURL(file) {
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function callConvertApi(file) {
+      const base64 = await fileToDataURL(file);
+      const payload = {
+        imageBase64: base64,
+        background: getBackgroundValue(),
+        angle: getAngleValue(),
+        style: {
+          theme: 'cute soft rounded 3D illustration',
+          material: 'matte plastic',
+          tone: 'toss-inspired',
+          lighting: 'soft studio lighting',
+          clean: true
+        }
+      };
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('API request failed');
+      const data = await response.json();
+      if (data.imageBase64) return data.imageBase64;
+      if (data.imageUrl) return data.imageUrl;
+      throw new Error('Invalid API response');
+    }
+
+    function pushHistory(dataUrl) {
+      historyItems.unshift({
+        id: Date.now() + Math.random().toString(16).slice(2),
+        src: dataUrl,
+        angle: getAngleLabel(getAngleValue())
+      });
+      historyItems = historyItems.slice(0, 10);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = '';
+      historyItems.forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'history-item';
+
+        const img = document.createElement('img');
+        img.className = 'history-thumb';
+        img.src = item.src;
+        img.alt = '최근 생성 아이콘';
+
+        const label = document.createElement('div');
+        label.className = 'history-angle';
+        label.textContent = item.angle;
+
+        button.appendChild(img);
+        button.appendChild(label);
+        button.addEventListener('click', async () => {
+          currentExportDataUrl = item.src;
+          await applyImageToCanvas(item.src);
+          showResultView();
+        });
+
+        historyList.appendChild(button);
+      });
+    }
+
+    function resetSelection() {
+      selectedFile = null;
+      selectedImageBitmap = null;
+      if (selectedObjectUrl) {
+        URL.revokeObjectURL(selectedObjectUrl);
+        selectedObjectUrl = null;
+      }
+      fileInput.value = '';
+      fileCard.style.display = 'none';
+      currentExportDataUrl = '';
+      clearCanvas();
+      showUploadView();
+      downloadButton.disabled = true;
+    }
+
+    async function setSelectedFile(file) {
+      if (!file) return;
+      selectedFile = file;
+      if (selectedObjectUrl) URL.revokeObjectURL(selectedObjectUrl);
+      selectedObjectUrl = URL.createObjectURL(file);
+      fileThumb.src = selectedObjectUrl;
+      fileName.textContent = file.name;
+      fileInfo.textContent = formatBytes(file.size);
+      fileCard.style.display = 'flex';
+      primaryButton.disabled = false;
+
+      const img = new Image();
+      img.src = selectedObjectUrl;
+      await img.decode();
+      selectedImageBitmap = img;
+    }
+
+    async function convertImage() {
+      if (!selectedFile || !selectedImageBitmap) return;
+      setLoading(true);
+      try {
+        let resolvedImage = '';
+        try {
+          resolvedImage = await callConvertApi(selectedFile);
+          await applyImageToCanvas(resolvedImage);
+          currentExportDataUrl = resolvedImage.startsWith('data:') ? resolvedImage : canvas.toDataURL('image/png');
+        } catch (error) {
+          drawFallbackPreview(selectedImageBitmap);
+          currentExportDataUrl = canvas.toDataURL('image/png');
+        }
+
+        if (!currentExportDataUrl) currentExportDataUrl = canvas.toDataURL('image/png');
+        pushHistory(currentExportDataUrl);
+        showResultView();
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function downloadCurrent() {
+      if (!currentExportDataUrl) return;
+      const link = document.createElement('a');
+      link.href = currentExportDataUrl;
+      link.download = 'icon-converted.png';
+      link.click();
+    }
+
+    uploadZone.addEventListener('dragenter', () => uploadZone.classList.add('dragover'));
+    uploadZone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const file = event.dataTransfer.files?.[0];
+      if (file) await setSelectedFile(file);
+    });
+
+    fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (file) await setSelectedFile(file);
+    });
+
+    primaryButton.addEventListener('click', async () => {
+      if (converted) {
+        resetSelection();
+        return;
+      }
+      await convertImage();
+    });
+
+    downloadButton.addEventListener('click', downloadCurrent);
+    document.querySelectorAll('input[name="background"]').forEach((input) => input.addEventListener('change', updateStatus));
+    document.querySelectorAll('input[name="angle"]').forEach((input) => input.addEventListener('change', updateStatus));
+
+    updateStatus();
+    showUploadView();
+  </script>
+</body>
+</html>
