@@ -103,7 +103,7 @@ export default async function handler(req, res) {
     console.log("calling OpenAI images.edit...");
 
     const result = await client.images.edit({
-      model: "gpt-image-1",
+      model: "dall-e-2",
       image: imageDataUrl,
       prompt,
       size: "1024x1024",
