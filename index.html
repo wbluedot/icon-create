@@ -16,6 +16,8 @@
       --shadow: 0 12px 32px rgba(17, 24, 39, 0.08);
       --radius-xl: 28px;
       --radius-lg: 20px;
+      --danger: #ef4444;
+      --danger-soft: #fef2f2;
     }
 
     * { box-sizing: border-box; }
@@ -86,12 +88,16 @@
       align-items: center;
       gap: 8px;
       width: fit-content;
-      padding: 8px 12px;
+      padding: 10px 12px;
       border-radius: 999px;
       background: #f3f4f6;
-      color: #4b5563;
-      font-size: 12px;
-      font-weight: 700;
+      border: 1px solid #eceff3;
+    }
+
+    .eyebrow img {
+      height: 16px;
+      width: auto;
+      display: block;
     }
 
     h1 {
@@ -171,15 +177,19 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 0 14px;
+      padding: 0 8px;
       border-radius: 14px;
       font-weight: 800;
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
       color: #6b7280;
       background: transparent;
       border: 1px solid transparent;
       cursor: pointer;
       transition: 0.18s ease;
       user-select: none;
+      letter-spacing: -0.02em;
     }
 
     .segmented input:checked + label {
@@ -514,6 +524,27 @@
     .loading-title { font-size: 16px; font-weight: 800; }
     .loading-desc { text-align: center; font-size: 13px; line-height: 1.6; color: var(--muted); }
 
+    .error-panel {
+      display: none;
+      margin-top: 8px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: var(--danger-soft);
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .error-title {
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .error-text {
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
     @keyframes shimmer {
       from { background-position: 200% 0; }
       to { background-position: -200% 0; }
@@ -583,6 +614,7 @@
       .actions { grid-template-columns: 1fr; }
       .stage { min-height: 420px; }
       .upload-zone { min-height: 260px; }
+      .segmented.three { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -591,9 +623,11 @@
     <div class="app">
       <aside class="panel sidebar">
         <div>
-          <div class="eyebrow">3D Icon Converter</div>
+          <div class="eyebrow">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeAAAAA8CAMAAACJgZlHAAAAqFBMVEUAAAD///////////////////////////////////////////////////////////////////8aK0X/////TQDj5eipr7lwe4s3RVyMlaJTYHQ3RlzGytEoOFHFytHx8vOaoq5/iJY3Rl24vcXU191FU2hhbn/x8vSNlaL/ZCD/6d//YyBweor/9O//vJ//sZD/kGD/gElFU2n/WBC3vMX/2sr/bzD/x68TYU3sAAAAEnRSTlMAgEAgv6Bg3xDvkDBwz1B/r28VA28eAAAMBUlEQVR42uyb2XraMBCFwYu8gIH2YFMWgwlL9zbp+v5v1iYFjuQRkpu2F/2+zCUzkmbOPyNsmvZsFoa9R1g6UP08zvujQe+PLBwN+/3+8DHbpCPV/2kqSDsF35/TOd00GMc/qxtyb68a92UEYSff4wVnBZ3WqLzIACCL8lH6O4cNowxnyybKHhRqZt89yBOxTUcLxlyKSFE87zmRSn3ljSPuXeTh76iRxIHHJy3UrbPgfokmGXTj6R4L8wzAZlfN5/NqvQGQjEPL/tAs6klTBQDsq2pe7bhNt9wfCJQ/U2h+ZYA47B6cMdgZPm92ewCIgi5qNOfwRDl90qCb7YjYK7i0QQTgzcfb15+n08/f7j6+ATDhKld7Z8B6/uL52Q5NCSRDG+DyZBtEVh03zaI+b7NoStbvtjACsJ5dli5nawB52in4sC2BbHy1vPg+fKvtvXO2z4Ma24sa9aICkIRUSvMd6TOMQpWARXBwm85KPQPw4W6q2bcPAMZecQcJsF48N21WAlEoAJcXvwScA5t5LbahlI7cM7l0WQHJoGPwoqTO7aQzoFqKva/pGRZSjeW8BMYunwT84uwHHiG4tDQCvr6etuztB7FKmMpQ8jTadkN9nYCZQFPLbeY25WVrrJdy6bEEhr5gCmRvhzGwZ3nkQiztdtgcLeEVEI8cPhdgv+B+pcIE72+nFrt9L1aJwV+TS0uDbNAVcFpg8+7KNj7CMTC3Lq13pOAKZrqSL9tO6ikJK2C/tIZvAZevSL2AmdHOL7jk+4bjaw7xGyQ83FZR8/yK1Sse6ANcoDxwpSTsnl+2hqSgfMFsB6nPmO3QhfAgQ3Ut/LBx+uKOgJ85Mqr3yOxKFeRrIUwWwsKMx1lsRTRuwDk2bG4L4eI63zGR2SgQmj941e7lgGraCY/ac7KjW1BsHL4Nxp0AD5iRnXCSWjV6T76S8HvkPbulrMh+YImoC2AFHB3bLDciA4rKit3QGOxPl8Aa194NMkPOCGX9/HE2AwIXYGZU+QS3anQ7ddgtMLg2PSUH7wqaoR9wmFB3qx1ZfttExbLkfufggzmTsQ/YHhOzTd1quJslcQJmRt0rYON9mDrtO6Jr0zPTtdzuynK/m92YV2TqBZzff05bbKvVqjEeFHcMN02Zd3v9sNTI4MgMFEoZfDRv3cQo79AON6tbGI1ntmk9a3ar3Zw7CN9W36rmKFgAM6OFT3B5SQeAuKDFJW0doFgfiLrC2V5pXcYBEoDtfbJY4ZeVM/0mkBlIUW9OS80n3xX6l+CtJbh8ZcisfOVVmp6VVoYy2vTVy1P46kbgNX0cBRdgmdHNjoLbbiyuEgMs7KMYINHhn14C0XAUBMMEKJn4DJkDsFRmi/t91DBODEyNfYQDfYDfPaSgVG5msDiP8IjnmMF7Bs8R2csrgShXqh8BJT8+ACl7bUbx90D2M3w4ofweX80eFoCZEatdnAXvm+VukQhMr32A71iHZgprnW8RnD9PeCDzvg64wIyND0xOR/WBlaDkuEOOQBQwA5Z8zmDSCh7wh4Pakq7C3lZemGBzsFwPA039mxKZOoXHF4r0jejb6r3lATzEWivAJzgxfZ167SuUVDfCTMs6JoAw0SRrkLsAm325gHbBDPR3sBLKekMvLim8RM4MCo1Oc3rJzIzg2P52Q2IRtlp5BcuLsak5L9FFfW5S6a+HffOLcyd97GE34MIUXH9KNcrNW0Pw0Q/4I2L5jnQPhhVdez1eIHEDHmFNjMY5Crixp82p0b8O3RkE2LSDuc1CEstw4OFJqhVecO8lkIp+mAFhj5bzJnL6OHoWwN0FP55cbIs7P+A7FFwhcd2csiYaNnlNnx1wjkbLzdgnomsmMmBv2FLoE2f9C8LQEUyZD8jO1Dea9Kr1zV/TNei174eVOQ4pXbwhLL4vGDoBB9hfFXzYLpeW4Zsf8FtkXCHvpLn2PijKLTFyADZav9KVMYduyQx0MDsxeVTuwAwGbCRbcAhciAEh5RQzIe7KPdR5vERLixZ2+xrkdsBS8MYt+ED3AJ/9gD8DqVCXqa3Y4TLvL1AewEeqFZiUWCj70kyBp/SvPiHsH1osxrw1K7QEx7Y8CmvZv7K66rRVyF5c8LIRj2vSp/do7AScswApeIym1XNs3mkHazeeKVhJMMxbk8AJuGDviVMS4RMpsGSPL8aMHwSiG9q1KFSsoN9qLOGTtdG6+yYuwKbgA3GfVmzfvw9Y97L/KYGr0OTfAJ44AJd/DLhcnezl3wQcuQEzSTgF/48A87eGujtgefO7AfMW6Q6Y9gT4MYDlggOytCNgvl3zSVcAdj1kScDSgouFT4AfDbigyEcu6AQ4ZgIHoOcEbAZnvS6Ae7QnwI8FPNamsEH8O4CfAQftLDdgZQYLwPWLtj0B/huAc/5Sy7dpL2D5hy0VchdgBvMNioDt9gT4jwGHw0TXfQGkXQGnKoJG5wYIJODrweET4H8IODkZAP6NKX/jcgHOTkuz+6VbLp0h6QnAMpj/LPkE+N8BpvH/EnCw3IBp+7m+tIQSgK8Gv4R6AvyjvTPuURMIovjCouyCeCYT7NVILafVXtpe2qa9fv9v1rDx+pZOw8AhKrHzp3PK8n7Hkh3eLP8CPOeF6lcAvkdATDxlagJc4KvF32Ynps89/2M8pBkDYF46DGg5CGAwZHWkLoCF+EixFgCzwM17Cn2EKIn0KAD/YIJHVA4I+A1Zw8oMpwNcVpA6AsYEnai2gL8TBWoUgEuyigk+IOCiktGPBe4I/QF/hu4iYM43NgJg8D3aPEawDi7+dopHGO1pAcMhdMcqFH0BY5LNVFfA4KtVS8APh+NJjqCSVRlDZqwzZAjAeGSKNk8doULRCzBm6ORVgMsD+La4glcbysYCuBI8geDoyDk9YBzQTuapTqcRoVGwH2D8Md11AQyDdWSUCJj3gIlPk8LAi/DcgNEtygQfADDUweIS/bd9AeMaDkXAHK/FLCYAxt2g+sr1Py50g2WCDwQYR6x2i8jfvQWv16+DC9a5IwC+92JfLg+Eewb0EY9TkjWtAOfLY+QXAAzBdxB8aMA8+lWy8iWGjZYSqZKFsIE34IZK1mFbU21HQSvAyF0OMKIJsGlrulNnBIwmIG77lwHbeDHDjC4AJvR91N3nU9/DmDCz32gAK0uPMuBnsucAjHnChBMoD8dOB8sOorHSl07QigL3OayQnMrRwoXjXjngzsb34QGjAQaE1zQ7NWAsMkAYV2tas5KHrGwEp++VA27bunJ2wMrEaDiAafi0gNGZjw4KeLLx4xFz+MCufeWAuzefcXX3/CjFvjdgpS1Se4oHA2ys32xkMQ977cl39TodhpWpCwAGaSY4A2xInqM/CZ7VPH/Depz7OTrQMwThBwOsZrjfYgyBP39g2zyTMDvQ+QFTs+B1KSJ5jn4S5se8Wtbsi5dV5pvlgU5km/Xvg8MBNpbumXkhJCpqdaMk1Dq8s+ALO9DZAbt1JBMcgOuH+PIoXsChANi6NeV6vVzvDm6p0gcwAsIjNwBglf0rF+HX/bpRvqo9qFYXAcwEjxlgRES/pAs4UgJgHU4yb7/d8PKtK50AL2o5zB8PfkV8uyHKtyWzA10EsJ77ggfhtAFwKm+jpEXAbu06n06n89RcRW+SCFjORbgLI5jD5yKAGwXnvZ7SRmiO0Miaz04AOCUqJYfP1ZvuXETNWxlm6jYBqxnRh0YHSHD9rkoXpnkzUn2rgNUERS7ON6fFCGyzrbYTvlnAJqONy/BYHSgzowHsXB9PfEPwn84UcbuAlVlgmys/iveVMmMwvtdcCk/PtScMT+QcDrcM2OmCspG/Kk7G0dmA0BP3Uo5vz9VLOR6/updyRLpJsN3yGBvix9u8JHMAxofvfMDrl08xbiHHh5C3ALzGeMP2uWlcIX7w9wBdE8VzhWDn1jdHtD1+uPUAMzGY4IIU4YT8sIuwWTAv+PEQHmCED5j/jpzjQ5ABexHKOURQDWP3vtyvVvvy/c75RYzwyqB+OfKjveCyFGaeRNbBzRLpbVHzAMHON+W+Q6W0/+GfQcwafoflGoaQqg7j1W1z6DFFRDM2FHZu/XKBH10Fl6XQWv0P9sK9ZBHFcbao/vFHFL8Bxzyw7aRLWvcAAAAASUVORK5CYII=" alt="Air Premia" />
+          </div>
           <h1>아이콘 변환기</h1>
-          <p class="sub">업로드한 이미지를 3D 아이콘 스타일로 변환하는 최종 프론트엔드 파일입니다. 기본값은 API 호출이며, 응답이 없으면 데모 렌더링으로 대체됩니다.</p>
+          <p class="sub">업로드한 이미지를 3D 아이콘 스타일로 변환하는 최종 프론트엔드 파일입니다. 기본값은 API 호출이며, 응답이 없으면 실패 메시지를 보여줍니다.</p>
         </div>
 
         <div class="section">
@@ -618,9 +652,9 @@
             <input type="radio" name="angle" id="angle-front" value="front" checked />
             <label for="angle-front">정면</label>
             <input type="radio" name="angle" id="angle-left" value="left45" />
-            <label for="angle-left">왼쪽 45º</label>
+            <label for="angle-left">왼쪽 45도</label>
             <input type="radio" name="angle" id="angle-right" value="right45" />
-            <label for="angle-right">오른쪽 45º</label>
+            <label for="angle-right">오른쪽 45도</label>
           </div>
         </div>
 
@@ -631,7 +665,7 @@
           </div>
           <div class="status-card">
             <div class="status-title">기본 엔드포인트</div>
-            <div class="status-body"><code>/api/convert-icon</code> 으로 요청합니다. 실제 서버를 연결하면 API 결과를 보여주고, 연결이 없으면 데모 결과로 동작합니다.</div>
+            <div class="status-body"><code>/api/convert-icon</code> 으로 요청합니다. 실제 서버를 연결하면 API 결과를 보여주고, 연결에 실패하면 화면 아래에 실패 메시지를 보여줍니다.</div>
           </div>
         </div>
       </aside>
@@ -685,6 +719,11 @@
           </div>
         </div>
 
+        <div class="error-panel" id="errorPanel">
+          <div class="error-title">변환 실패</div>
+          <div class="error-text" id="errorText">아이콘 생성 중 문제가 발생했어요. API 설정이나 로그를 확인해주세요.</div>
+        </div>
+
         <div class="actions" id="actionsRow">
           <button class="button primary" id="primaryButton" disabled>아이콘 변환</button>
           <button class="button secondary" id="downloadButton" disabled>PNG 다운로드</button>
@@ -726,6 +765,8 @@
     const iconCard = document.getElementById('iconCard');
     const canvas = document.getElementById('previewCanvas');
     const ctx = canvas.getContext('2d');
+    const errorPanel = document.getElementById('errorPanel');
+    const errorText = document.getElementById('errorText');
 
     let selectedFile = null;
     let selectedObjectUrl = null;
@@ -765,6 +806,16 @@
       else iconCard.classList.add('front');
     }
 
+    function hideError() {
+      errorPanel.style.display = 'none';
+      errorText.textContent = '아이콘 생성 중 문제가 발생했어요. API 설정이나 로그를 확인해주세요.';
+    }
+
+    function showError(message) {
+      errorText.textContent = message || '아이콘 생성 중 문제가 발생했어요. API 설정이나 로그를 확인해주세요.';
+      errorPanel.style.display = 'block';
+    }
+
     function setLoading(isLoading) {
       loadingOverlay.style.display = isLoading ? 'flex' : 'none';
       primaryButton.disabled = isLoading;
@@ -794,49 +845,6 @@
 
     function clearCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function drawFallbackPreview(imageSource) {
-      clearCanvas();
-      const off = document.createElement('canvas');
-      off.width = canvas.width;
-      off.height = canvas.height;
-      const ox = off.getContext('2d');
-
-      const maxW = canvas.width * 0.5;
-      const maxH = canvas.height * 0.5;
-      const ratio = Math.min(maxW / imageSource.width, maxH / imageSource.height);
-      const w = imageSource.width * ratio;
-      const h = imageSource.height * ratio;
-      const x = (canvas.width - w) / 2;
-      const y = (canvas.height - h) / 2 - 16;
-
-      ox.drawImage(imageSource, x, y, w, h);
-      const imageData = ox.getImageData(0, 0, off.width, off.height);
-      const data = imageData.data;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const a = data[i + 3];
-        if (a < 8) continue;
-        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        data[i] = 255;
-        data[i + 1] = 255;
-        data[i + 2] = 255;
-        data[i + 3] = brightness > 240 ? 145 : Math.max(a, 195);
-      }
-
-      ox.putImageData(imageData, 0, 0);
-      ctx.save();
-      ctx.globalAlpha = 0.18;
-      ctx.filter = 'blur(12px)';
-      ctx.drawImage(off, 12, 18);
-      ctx.globalAlpha = 0.12;
-      ctx.filter = 'blur(8px)';
-      ctx.drawImage(off, -8, -10);
-      ctx.globalAlpha = 1;
-      ctx.filter = 'none';
-      ctx.drawImage(off, 0, 0);
-      ctx.restore();
     }
 
     function applyImageToCanvas(src) {
@@ -882,8 +890,14 @@
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error('API request failed');
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      console.log('API response status:', response.status);
+      console.log('API response body:', data);
+
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || 'API request failed');
+      }
+
       if (data.imageBase64) return data.imageBase64;
       if (data.imageUrl) return data.imageUrl;
       throw new Error('Invalid API response');
@@ -918,6 +932,7 @@
         button.appendChild(img);
         button.appendChild(label);
         button.addEventListener('click', async () => {
+          hideError();
           currentExportDataUrl = item.src;
           await applyImageToCanvas(item.src);
           showResultView();
@@ -938,12 +953,14 @@
       fileCard.style.display = 'none';
       currentExportDataUrl = '';
       clearCanvas();
+      hideError();
       showUploadView();
       downloadButton.disabled = true;
     }
 
     async function setSelectedFile(file) {
       if (!file) return;
+      hideError();
       selectedFile = file;
       if (selectedObjectUrl) URL.revokeObjectURL(selectedObjectUrl);
       selectedObjectUrl = URL.createObjectURL(file);
@@ -961,21 +978,27 @@
 
     async function convertImage() {
       if (!selectedFile || !selectedImageBitmap) return;
+      hideError();
       setLoading(true);
       try {
-        let resolvedImage = '';
-        try {
-          resolvedImage = await callConvertApi(selectedFile);
-          await applyImageToCanvas(resolvedImage);
-          currentExportDataUrl = resolvedImage.startsWith('data:') ? resolvedImage : canvas.toDataURL('image/png');
-        } catch (error) {
-          drawFallbackPreview(selectedImageBitmap);
-          currentExportDataUrl = canvas.toDataURL('image/png');
+        const resolvedImage = await callConvertApi(selectedFile);
+        await applyImageToCanvas(resolvedImage);
+        currentExportDataUrl = resolvedImage.startsWith('data:')
+          ? resolvedImage
+          : canvas.toDataURL('image/png');
+
+        if (!currentExportDataUrl) {
+          throw new Error('이미지 데이터가 비어 있어요.');
         }
 
-        if (!currentExportDataUrl) currentExportDataUrl = canvas.toDataURL('image/png');
         pushHistory(currentExportDataUrl);
         showResultView();
+      } catch (error) {
+        console.error('AI generation failed:', error);
+        clearCanvas();
+        currentExportDataUrl = '';
+        showUploadView();
+        showError(error?.message || '아이콘 변환에 실패했어요. API 설정이나 로그를 확인해주세요.');
       } finally {
         setLoading(false);
       }
@@ -1020,6 +1043,7 @@
     document.querySelectorAll('input[name="angle"]').forEach((input) => input.addEventListener('change', updateStatus));
 
     updateStatus();
+    hideError();
     showUploadView();
   </script>
 </body>
