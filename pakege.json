@@ -1,0 +1,8 @@
+{
+  "name": "icon-create",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "openai": "^4.104.0"
+  }
+}
