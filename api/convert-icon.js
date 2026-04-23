@@ -107,7 +107,6 @@ export default async function handler(req, res) {
       image: imageDataUrl,
       prompt,
       size: "1024x1024",
-      quality: "medium",
       output_format: "png",
       background: normalizeBackground(background),
     });
