@@ -107,7 +107,6 @@ export default async function handler(req, res) {
       image: imageDataUrl,
       prompt,
       size: "1024x1024",
-      background: normalizeBackground(background),
     });
 
     console.log("OpenAI images.edit completed");
