@@ -2,27 +2,27 @@ import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
 
-console.log("convert-icon function started");
-console.log("cwd:", process.cwd());
-console.log("OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY);
-
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 const promptPath = path.join(process.cwd(), "prompts/icon-style.md");
-console.log("prompt path:", promptPath);
 
-let basePrompt = "";
-try {
-  basePrompt = fs.readFileSync(promptPath, "utf-8");
-  console.log("prompt file loaded successfully");
-} catch (error) {
-  console.error("failed to read prompt file:", error);
-  throw error;
+function safeJson(res, status, body) {
+  res.status(status).setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(body));
 }
 
-function buildPrompt({ angle = "front", background = "transparent" }) {
+function getBasePrompt() {
+  try {
+    return fs.readFileSync(promptPath, "utf-8");
+  } catch (error) {
+    console.error("failed to read prompt file:", error);
+    throw new Error("프롬프트 파일을 읽을 수 없어요. prompts/icon-style.md 경로를 확인해주세요.");
+  }
+}
+
+function buildPrompt({ basePrompt, angle = "front", background = "transparent" }) {
   const angleMap = {
     front: "front view",
     left45: "left 45 degree view",
@@ -52,16 +52,8 @@ Background: ${bgText}
 
 ## Output Goal
 Create a clean, soft, rounded 3D object in the same silhouette family as the uploaded image.
+Return a single final image only.
 `;
-}
-
-function normalizeBackground(background) {
-  return background === "white" ? "opaque" : "transparent";
-}
-
-function safeJson(res, status, body) {
-  res.status(status).setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(body));
 }
 
 export const config = {
@@ -73,6 +65,9 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  console.log("convert-icon function started");
+  console.log("cwd:", process.cwd());
+  console.log("OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY);
   console.log("request method:", req.method);
 
   if (req.method !== "POST") {
@@ -81,51 +76,71 @@ export default async function handler(req, res) {
 
   try {
     const { imageBase64, background = "transparent", angle = "front" } = req.body || {};
+
     console.log("request body received");
     console.log("background:", background, "angle:", angle);
     console.log("imageBase64 exists:", !!imageBase64);
 
     if (!process.env.OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY is not set");
       return safeJson(res, 500, { error: "OPENAI_API_KEY is not set" });
     }
 
     if (!imageBase64 || typeof imageBase64 !== "string") {
-      console.error("imageBase64 is missing or invalid");
       return safeJson(res, 400, { error: "imageBase64 is required" });
     }
 
-    const prompt = buildPrompt({ angle, background });
-    const imageDataUrl = imageBase64.startsWith("data:")
-      ? imageBase64
-      : `data:image/png;base64,${imageBase64}`;
+    const basePrompt = getBasePrompt();
+    const prompt = buildPrompt({ basePrompt, angle, background });
 
-    console.log("calling OpenAI images.edit...");
+    console.log("calling OpenAI responses.create...");
 
-    const result = await client.images.edit({
-      model: "dall-e-2",
-      image: imageDataUrl,
-      prompt,
-      size: "1024x1024",
+    const response = await client.responses.create({
+      model: "gpt-4.1-mini",
+      tools: [{ type: "image_generation" }],
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: prompt,
+            },
+            {
+              type: "input_image",
+              image_url: imageBase64,
+            },
+          ],
+        },
+      ],
     });
 
-    console.log("OpenAI images.edit completed");
+    console.log("OpenAI responses.create completed");
 
-    const b64 = result?.data?.[0]?.b64_json;
+    const imageOutput = response.output.find(
+      (item) => item.type === "image_generation_call"
+    );
+
+    const b64 = imageOutput?.result;
 
     if (!b64) {
-      console.error("No image returned from OpenAI", result);
-      return safeJson(res, 502, { error: "No image returned from OpenAI" });
+      console.error("No image returned from OpenAI", response.output);
+      return safeJson(res, 502, {
+        error: "No image returned from OpenAI",
+        detail: "응답에 이미지 데이터가 없어요.",
+      });
     }
 
     console.log("returning generated image");
+
     return safeJson(res, 200, {
       imageBase64: `data:image/png;base64,${b64}`,
     });
   } catch (error) {
     console.error("Image generation failed:", error);
-    const status = error?.status || 500;
-    return safeJson(res, status, {
+    console.error("error message:", error?.message);
+    console.error("error status:", error?.status);
+
+    return safeJson(res, error?.status || 500, {
       error: "Image generation failed",
       detail: error?.message || "Unknown error",
     });
